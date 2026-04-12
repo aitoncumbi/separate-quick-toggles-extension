@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.separate-quick-toggles"
+          path="/org/gnome/shell/extensions/separate-quick-toggles/">
+
+    <key name="indicator-order" type="as">
+      <default>['wifi', 'bluetooth', 'sound', 'battery']</default>
+      <summary>Order of panel indicators</summary>
+      <description>List of indicator IDs in the order they appear on the panel (left to right).</description>
+    </key>
+
+    <key name="show-wifi" type="b">
+      <default>true</default>
+      <summary>Show Wi-Fi indicator</summary>
+    </key>
+
+    <key name="show-bluetooth" type="b">
+      <default>true</default>
+      <summary>Show Bluetooth indicator</summary>
+    </key>
+
+    <key name="show-sound" type="b">
+      <default>true</default>
+      <summary>Show Sound indicator</summary>
+    </key>
+
+    <key name="show-battery" type="b">
+      <default>true</default>
+      <summary>Show Battery indicator</summary>
+    </key>
+
+    <key name="show-battery-percentage" type="b">
+      <default>true</default>
+      <summary>Show battery percentage label next to icon</summary>
+    </key>
+
+    <key name="show-notification" type="b">
+      <default>true</default>
+      <summary>Show Notification indicator</summary>
+    </key>
+
+    <key name="compact-mode" type="b">
+      <default>false</default>
+      <summary>Compact (iOS-style) mode</summary>
+      <description>Show a single panel icon that opens one combined menu with all sections, instead of four separate icons.</description>
+    </key>
+
+  </schema>
+</schemalist>

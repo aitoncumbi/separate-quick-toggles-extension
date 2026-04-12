@@ -1,0 +1,9 @@
+{
+  "name": "Separate Quick Toggles",
+  "description": "Replaces the clustered system quick-toggles tray with individual panel buttons: Wi-Fi, Bluetooth, Sound, and Battery each get their own dedicated icon and popup menu in the top bar. Configurable via the Extensions preferences.",
+  "uuid": "separate-quick-toggles@extension",
+  "version": 2,
+  "shell-version": ["45", "46", "47", "48", "49", "50"],
+  "url": "",
+  "settings-schema": "org.gnome.shell.extensions.separate-quick-toggles"
+}

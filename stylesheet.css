@@ -1,0 +1,32 @@
+/* Separate Quick Toggles – stylesheet.css */
+
+/* Individual indicator buttons on the panel */
+.sqt-panel-button {
+    spacing: 4px;
+}
+
+/* Ensure icons render at the correct system size */
+.sqt-panel-button .system-status-icon {
+    icon-size: 16px;
+}
+
+/* Menu header labels */
+.sqt-menu-header {
+    font-weight: bold;
+    font-size: 1.05em;
+    padding: 4px 0;
+}
+
+/* Volume label inside sound menu */
+.sqt-vol-label {
+    min-width: 42px;
+    text-align: center;
+}
+
+/* Make the quick settings button icon-sized for a single icon */
+.quick-settings-button {
+    min-width: auto !important;
+    width: auto !important;
+    padding: 0 !important;
+    spacing: 0 !important;
+}
