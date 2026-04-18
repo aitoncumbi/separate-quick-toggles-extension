@@ -290,6 +290,32 @@ export default class SeparateQuickTogglesPrefs extends ExtensionPreferences {
     );
     batteryGroup.add(pctRow);
 
+    // ── Pocket group ──────────────────────────────────────────────────────
+    const pocketGroup = new Adw.PreferencesGroup({
+      title: _("Pocket"),
+    });
+    page.add(pocketGroup);
+
+    const colorRow = new Adw.EntryRow({
+      title: _("Pocket color"),
+      text: settings.get_string("pocket-color"),
+    });
+    colorRow.set_show_apply_button(true);
+    settings.bind(
+      "pocket-color",
+      colorRow,
+      "text",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+    pocketGroup.add(colorRow);
+
+    const colorHintRow = new Adw.ActionRow({
+      title: _("Accepted formats"),
+      subtitle: _("Hex (#1a1a1f), rgb()/rgba(), hsl()/hsla(), or color names"),
+      sensitive: false,
+    });
+    pocketGroup.add(colorHintRow);
+
     // ── Hint ─────────────────────────────────────────────────────────────
     const hintGroup = new Adw.PreferencesGroup();
     page.add(hintGroup);

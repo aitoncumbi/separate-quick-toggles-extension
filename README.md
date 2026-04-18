@@ -77,8 +77,17 @@ The default GNOME Quick Settings button in the top-right corner is now replaced 
 
 ## Files
 
-- `extension.js` - Main extension logic
+- `extension.js` - Extension lifecycle and panel wiring
 - `prefs.js` - Preferences/settings UI
+- `lib/utils.js` - Shared process/DBus/menu helper functions
+- `lib/volume-slider.js` - Reusable custom volume slider widget
+- `ui/compact-indicator.js` - Compact mode indicator/menu
+- `ui/wifi-indicator.js` - Wi-Fi standalone indicator
+- `ui/bluetooth-indicator.js` - Bluetooth standalone indicator
+- `ui/sound-indicator.js` - Sound standalone indicator
+- `ui/battery-indicator.js` - Battery standalone indicator
+- `ui/notification-indicator.js` - Notification standalone indicator
+- `ui/indicators.js` - Indicator factory for runtime creation
 - `stylesheet.css` - Visual styling
 - `metadata.json` - Extension metadata
 - `schemas/org.gnome.shell.extensions.separate-quick-toggles.gschema.xml` - GSettings schema

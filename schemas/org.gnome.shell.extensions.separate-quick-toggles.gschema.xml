@@ -45,5 +45,11 @@
       <description>Show a single panel icon that opens one combined menu with all sections, instead of four separate icons.</description>
     </key>
 
+    <key name="pocket-color" type="s">
+      <default>'#1a1a1f'</default>
+      <summary>Pocket background color</summary>
+      <description>CSS color used for the pocket background and shoulder illusion.</description>
+    </key>
+
   </schema>
 </schemalist>
