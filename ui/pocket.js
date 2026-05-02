@@ -18,6 +18,8 @@ export default class Pocket {
     this._hideSourceId = null;
     this._settingsSignalId = 0;
 
+    this._trailingActor = null;
+
     this._actor = new St.BoxLayout({
       style_class: "pocket",
       reactive: false,
@@ -84,6 +86,7 @@ export default class Pocket {
     this.cancelHide();
 
     const iconName = options?.iconName ?? "";
+    const trailingActor = options?.trailingActor ?? null;
 
     this._label.text = label ?? "";
     this._value.text = value ?? "";
@@ -94,6 +97,12 @@ export default class Pocket {
     } else {
       this._valueIcon.visible = false;
       this._valueIcon.icon_name = "";
+    }
+
+    if (this._trailingActor !== trailingActor) {
+      if (this._trailingActor) this._actor.remove_child(this._trailingActor);
+      this._trailingActor = trailingActor;
+      if (this._trailingActor) this._actor.add_child(this._trailingActor);
     }
 
     this._positionUnder(iconActor);
@@ -141,6 +150,11 @@ export default class Pocket {
       this._settingsSignalId = 0;
     }
     this._settings = null;
+
+    if (this._trailingActor) {
+      this._actor?.remove_child(this._trailingActor);
+      this._trailingActor = null;
+    }
 
     this._actor?.remove_all_transitions();
     this._actor?.destroy();
@@ -193,6 +207,10 @@ export default class Pocket {
       mode: Clutter.AnimationMode.EASE_OUT_QUAD,
       onComplete: () => {
         if (!this._actor) return;
+        if (this._trailingActor) {
+          this._actor.remove_child(this._trailingActor);
+          this._trailingActor = null;
+        }
         this._actor.visible = false;
         if (this._shoulderLeft) this._shoulderLeft.visible = false;
         if (this._shoulderRight) this._shoulderRight.visible = false;

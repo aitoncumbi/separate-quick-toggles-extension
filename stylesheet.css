@@ -44,6 +44,10 @@
     min-height: 16px;
 }
 
+.pocket .sqt-sound-visualizer {
+    margin-left: 8px;
+}
+
 .sqt-sound-visualizer-bar {
     width: 2px;
     height: 14px;

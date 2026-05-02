@@ -39,19 +39,14 @@ const SoundIndicator = GObject.registerClass(
       });
       this._visualizer = new St.BoxLayout({
         style_class: "sqt-sound-visualizer",
-        visible: false,
         y_align: Clutter.ActorAlign.CENTER,
       });
-      this._visualizer.set_style(
-        "spacing: 2px; min-width: 16px; min-height: 16px;"
-      );
       this._buildVisualizer();
 
       this._iconBox = new St.Bin({ style_class: "system-status-icon" });
       this._iconBox.set_child(this._icon);
 
       this._content.add_child(this._iconBox);
-      this._content.add_child(this._visualizer);
       this.add_child(this._content);
       this._buildMenu();
       this._readState();
@@ -67,6 +62,7 @@ const SoundIndicator = GObject.registerClass(
         );
         this._signalIds.push(
           this.connect("leave-event", () => {
+            this._stopVisualizerAnimation();
             this._stopPocketRefresh();
             this._pocket.hide();
           })
@@ -89,9 +85,15 @@ const SoundIndicator = GObject.registerClass(
         value = `${media.player} · ${title} - ${artist}`;
       }
 
+      if (this._isMediaPlaying)
+        this._startVisualizerAnimation();
+      else
+        this._stopVisualizerAnimation();
+
       this._pocket.cancelHide();
       this._pocket.show(this, _("Sound"), value, "#f59e0b", {
         iconName: this._icon.icon_name,
+        trailingActor: this._isMediaPlaying ? this._visualizer : null,
       });
     }
 
@@ -160,17 +162,10 @@ const SoundIndicator = GObject.registerClass(
     }
 
     _syncVisualizerState() {
-      if (this._isMediaPlaying) {
-        this._iconBox.visible = false;
-        this._visualizer.visible = true;
-        this._startVisualizerAnimation();
-        return;
+      if (!this._isMediaPlaying) {
+        this._stopVisualizerAnimation();
+        this._resetVisualizer();
       }
-
-      this._stopVisualizerAnimation();
-      this._visualizer.visible = false;
-      this._iconBox.visible = true;
-      this._resetVisualizer();
     }
 
     _startVisualizerAnimation() {
