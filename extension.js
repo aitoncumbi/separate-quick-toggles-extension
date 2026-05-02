@@ -4,6 +4,7 @@ import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
+import AppDock from "./ui/app-dock.js";
 import CompactIndicator from "./ui/compact-indicator.js";
 import { createIndicator } from "./ui/indicators.js";
 import Pocket from "./ui/pocket.js";
@@ -17,6 +18,9 @@ export default class SeparateQuickToggles extends Extension {
     this._connections = [];
     this._sqtPatched = false;
     this._pocket = new Pocket(this._settings);
+    this._appDock = new AppDock(this._settings, this._pocket);
+
+    this._syncPanelLayout();
 
     this._build();
 
@@ -42,10 +46,19 @@ export default class SeparateQuickToggles extends Extension {
           );
       })
     );
+
+    for (const key of ["clock-position", "hide-activities-button"]) {
+      this._connections.push(
+        this._settings.connect(`changed::${key}`, () => this._syncPanelLayout())
+      );
+    }
   }
 
   disable() {
+    this._restorePanelLayout();
     this._destroy();
+    this._appDock?.destroy();
+    this._appDock = null;
     this._pocket?.destroy();
     this._pocket = null;
     for (const conn of this._connections) {
@@ -94,6 +107,63 @@ export default class SeparateQuickToggles extends Extension {
       this._compactIndicator = null;
     }
     this._unpatchQuickSettings();
+  }
+
+  _getPanelBox(position) {
+    switch (position) {
+      case "left":
+        return Main.panel?._leftBox;
+      case "center":
+        return Main.panel?._centerBox;
+      case "right":
+      default:
+        return Main.panel?._rightBox;
+    }
+  }
+
+  _syncPanelLayout() {
+    const dateMenu = Main.panel.statusArea.dateMenu?.container;
+    if (dateMenu) {
+      const position = this._settings?.get_string("clock-position") ?? "right";
+      const targetBox = this._getPanelBox(position);
+      if (targetBox && dateMenu.get_parent() !== targetBox) {
+        this._sqtOriginalClockParent ??= dateMenu.get_parent();
+        this._sqtOriginalClockIndex ??=
+          dateMenu.get_parent()?.get_children?.().indexOf(dateMenu) ?? -1;
+        dateMenu.get_parent()?.remove_child(dateMenu);
+        targetBox.add_child(dateMenu);
+      }
+    }
+
+    const activities = Main.panel.statusArea.activities?.container;
+    if (activities) {
+      this._sqtOriginalActivitiesVisible ??= activities.visible;
+      const shouldHide =
+        this._settings?.get_boolean("hide-activities-button") ?? false;
+      activities.visible = !shouldHide;
+      activities.reactive = !shouldHide;
+      activities.can_focus = !shouldHide;
+    }
+  }
+
+  _restorePanelLayout() {
+    const dateMenu = Main.panel.statusArea.dateMenu?.container;
+    if (dateMenu && this._sqtOriginalClockParent) {
+      const parent = dateMenu.get_parent();
+      if (parent) parent.remove_child(dateMenu);
+      if (this._sqtOriginalClockIndex >= 0)
+        this._sqtOriginalClockParent.insert_child_at_index(
+          dateMenu,
+          this._sqtOriginalClockIndex
+        );
+      else this._sqtOriginalClockParent.add_child(dateMenu);
+    }
+
+    const activities = Main.panel.statusArea.activities?.container;
+    if (activities && typeof this._sqtOriginalActivitiesVisible === "boolean") {
+      activities.visible = this._sqtOriginalActivitiesVisible;
+      activities.reactive = this._sqtOriginalActivitiesVisible;
+    }
   }
 
   _createIndicator(id) {

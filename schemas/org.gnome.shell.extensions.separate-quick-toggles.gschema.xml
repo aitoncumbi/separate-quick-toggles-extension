@@ -45,6 +45,23 @@
       <description>Show a single panel icon that opens one combined menu with all sections, instead of four separate icons.</description>
     </key>
 
+    <key name="clock-position" type="s">
+      <default>'right'</default>
+      <summary>Clock position</summary>
+      <description>Place the clock/date menu on the left, center, or right side of the top bar.</description>
+    </key>
+
+    <key name="hide-activities-button" type="b">
+      <default>false</default>
+      <summary>Hide Activities button</summary>
+    </key>
+
+    <key name="app-dock-position" type="s">
+      <default>'right'</default>
+      <summary>App dock position</summary>
+      <description>Place the app dock on the left, center, or right section of the top bar.</description>
+    </key>
+
     <key name="pocket-color" type="s">
       <default>'#1a1a1f'</default>
       <summary>Pocket background color</summary>

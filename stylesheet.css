@@ -5,8 +5,23 @@
     spacing: 4px;
 }
 
+/* Top-bar app dock */
+.sqt-app-dock {
+    spacing: 2px;
+    margin-right: 8px;
+}
+
+.sqt-app-dock-button {
+    padding: 0 4px;
+    min-width: auto;
+}
+
 /* Ensure icons render at the correct system size */
 .sqt-panel-button .system-status-icon {
+    icon-size: 16px;
+}
+
+.sqt-app-dock-button .system-status-icon {
     icon-size: 16px;
 }
 
@@ -21,6 +36,19 @@
 .sqt-vol-label {
     min-width: 42px;
     text-align: center;
+}
+
+.sqt-sound-visualizer {
+    spacing: 2px;
+    min-width: 16px;
+    min-height: 16px;
+}
+
+.sqt-sound-visualizer-bar {
+    width: 2px;
+    height: 14px;
+    border-radius: 1px;
+    background-color: rgba(255, 255, 255, 0.96);
 }
 
 /* Make the quick settings button icon-sized for a single icon */

@@ -270,6 +270,67 @@ export default class SeparateQuickTogglesPrefs extends ExtensionPreferences {
     );
     compactGroup.add(compactRow);
 
+    const layoutGroup = new Adw.PreferencesGroup({
+      title: _("Top Bar Layout"),
+    });
+    page.add(layoutGroup);
+
+    const clockPositionRow = new Adw.ComboRow({
+      title: _("Clock position"),
+    });
+    const clockPositionModel = new Gtk.StringList({
+      strings: ["left", "center", "right"],
+    });
+    clockPositionRow.model = clockPositionModel;
+
+    const clockPosition = settings.get_string("clock-position");
+    const clockPositionIndex = ["left", "center", "right"].indexOf(
+      clockPosition
+    );
+    clockPositionRow.selected =
+      clockPositionIndex >= 0 ? clockPositionIndex : 2;
+    clockPositionRow.connect("notify::selected", () => {
+      const selected = clockPositionRow.selected;
+      const value = clockPositionModel.get_string(selected) ?? "right";
+      settings.set_string("clock-position", value);
+    });
+    layoutGroup.add(clockPositionRow);
+
+    const activitiesRow = new Adw.SwitchRow({
+      title: _("Hide Activities button"),
+      subtitle: _("Remove the Activities button from the top bar"),
+    });
+    settings.bind(
+      "hide-activities-button",
+      activitiesRow,
+      "active",
+      Gio.SettingsBindFlags.DEFAULT
+    );
+    layoutGroup.add(activitiesRow);
+
+    const dockGroup = new Adw.PreferencesGroup({
+      title: _("App Dock"),
+    });
+    page.add(dockGroup);
+
+    const dockPositionRow = new Adw.ComboRow({
+      title: _("Dock position"),
+    });
+    const dockPositionModel = new Gtk.StringList({
+      strings: ["left", "center", "right"],
+    });
+    dockPositionRow.model = dockPositionModel;
+
+    const dockPosition = settings.get_string("app-dock-position");
+    const dockPositionIndex = ["left", "center", "right"].indexOf(dockPosition);
+    dockPositionRow.selected = dockPositionIndex >= 0 ? dockPositionIndex : 2;
+    dockPositionRow.connect("notify::selected", () => {
+      const selected = dockPositionRow.selected;
+      const value = dockPositionModel.get_string(selected) ?? "right";
+      settings.set_string("app-dock-position", value);
+    });
+    dockGroup.add(dockPositionRow);
+
     // ── Battery group ─────────────────────────────────────────────────────
     const batteryGroup = new Adw.PreferencesGroup({
       title: _("Battery"),

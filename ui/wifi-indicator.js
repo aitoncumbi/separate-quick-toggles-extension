@@ -32,7 +32,9 @@ const WifiIndicator = GObject.registerClass(
       this._pocketRefreshSourceId = 0;
       this._activeWifiRefreshSourceId = 0;
       this._lastCounters = null;
-      this._throughputText = "";
+      this._downloadRateText = "0 B/s";
+      this._uploadRateText = "0 B/s";
+      this._hasThroughputSample = false;
       this._currentSsid = "";
       this._currentStrength = 0;
       this._activeIface = "";
@@ -99,9 +101,7 @@ const WifiIndicator = GObject.registerClass(
       if (!this._currentSsid) this._refreshFromActiveAccessPoint();
 
       const ssid = this._currentSsid || _("Connected");
-      const speedText = this._throughputText
-        ? ` · ${this._throughputText}`
-        : "";
+      const speedText = ` · ↓ ${this._downloadRateText} ↑ ${this._uploadRateText}`;
       return {
         value: `${ssid}${speedText}`,
         iconName:
@@ -190,6 +190,8 @@ const WifiIndicator = GObject.registerClass(
         this._currentSsid = "";
         this._currentStrength = 0;
         this._activeIface = "";
+        this._lastCounters = null;
+        this._setThroughput("0 B/s", "0 B/s", false);
         return;
       }
 
@@ -336,6 +338,8 @@ const WifiIndicator = GObject.registerClass(
     _parseActiveWifiInterface(out) {
       if (!out) return null;
 
+      let fallbackIface = "";
+
       for (const rawLine of out.split("\n")) {
         const line = rawLine.trim();
         if (!line) continue;
@@ -345,11 +349,13 @@ const WifiIndicator = GObject.registerClass(
         const connection = (parts[2] ?? "").trim();
         if (type !== "wifi" && type !== "802-11-wireless") continue;
         if (!iface) continue;
+        if (!fallbackIface) fallbackIface = iface;
         if (connection && connection !== "--") {
           return { iface, connection };
         }
       }
 
+      if (fallbackIface) return { iface: fallbackIface, connection: "" };
       return null;
     }
 
@@ -357,42 +363,42 @@ const WifiIndicator = GObject.registerClass(
       const iface = this._activeIface || this._detectWirelessInterface();
       if (!iface) {
         this._lastCounters = null;
-        if (this._throughputText !== "") {
-          this._throughputText = "";
-          if (this._isHovering) this._showPocket();
-        }
+        this._setThroughput("0 B/s", "0 B/s", false);
         return;
       }
 
       const counters = this._readInterfaceCounters(iface);
       if (!counters) {
-        if (this._throughputText !== "") {
-          this._throughputText = "";
-          if (this._isHovering) this._showPocket();
-        }
+        this._lastCounters = null;
+        this._setThroughput("0 B/s", "0 B/s", false);
         return;
       }
 
       const nowUs = GLib.get_monotonic_time();
-      if (this._lastCounters && this._lastCounters.iface === iface) {
-        const elapsedSeconds = (nowUs - this._lastCounters.tsUs) / 1000000;
-        if (elapsedSeconds > 0.1) {
-          const rxDelta = Math.max(
-            0,
-            counters.rxBytes - this._lastCounters.rxBytes
-          );
-          const txDelta = Math.max(
-            0,
-            counters.txBytes - this._lastCounters.txBytes
-          );
-          const downRate = this._formatBytesPerSecond(rxDelta / elapsedSeconds);
-          const upRate = this._formatBytesPerSecond(txDelta / elapsedSeconds);
-          const nextThroughput = `↓ ${downRate} ↑ ${upRate}`;
-          if (nextThroughput !== this._throughputText) {
-            this._throughputText = nextThroughput;
-            if (this._isHovering) this._showPocket();
-          }
-        }
+      if (!this._lastCounters || this._lastCounters.iface !== iface) {
+        this._lastCounters = {
+          iface,
+          rxBytes: counters.rxBytes,
+          txBytes: counters.txBytes,
+          tsUs: nowUs,
+        };
+        this._setThroughput("0 B/s", "0 B/s", false);
+        return;
+      }
+
+      const elapsedSeconds = (nowUs - this._lastCounters.tsUs) / 1000000;
+      if (elapsedSeconds > 0.1) {
+        const rxDelta = Math.max(
+          0,
+          counters.rxBytes - this._lastCounters.rxBytes
+        );
+        const txDelta = Math.max(
+          0,
+          counters.txBytes - this._lastCounters.txBytes
+        );
+        const downRate = this._formatBytesPerSecond(rxDelta / elapsedSeconds);
+        const upRate = this._formatBytesPerSecond(txDelta / elapsedSeconds);
+        this._setThroughput(downRate, upRate, true);
       }
 
       this._lastCounters = {
@@ -452,6 +458,19 @@ const WifiIndicator = GObject.registerClass(
       return "";
     }
 
+    _setThroughput(downRateText, upRateText, hasSample) {
+      const changed =
+        this._downloadRateText !== downRateText ||
+        this._uploadRateText !== upRateText ||
+        this._hasThroughputSample !== hasSample;
+      if (!changed) return;
+
+      this._downloadRateText = downRateText;
+      this._uploadRateText = upRateText;
+      this._hasThroughputSample = hasSample;
+      if (this._isHovering) this._showPocket();
+    }
+
     _formatBytesPerSecond(bytesPerSecond) {
       if (!Number.isFinite(bytesPerSecond) || bytesPerSecond <= 0)
         return "0 B/s";
@@ -492,6 +511,8 @@ const WifiIndicator = GObject.registerClass(
         this._currentSsid = "";
         this._currentStrength = 0;
         this._activeIface = "";
+        this._lastCounters = null;
+        this._setThroughput("0 B/s", "0 B/s", false);
         this._icon.icon_name = "network-wireless-offline-symbolic";
       } else if (state >= NM_STATE_CONNECTED_LOCAL) {
         const activeApPath = this._proxy
@@ -529,6 +550,8 @@ const WifiIndicator = GObject.registerClass(
         this._currentSsid = "";
         this._currentStrength = 0;
         this._activeIface = "";
+        this._lastCounters = null;
+        this._setThroughput("0 B/s", "0 B/s", false);
         this._icon.icon_name = "network-wireless-disconnected-symbolic";
       }
     }

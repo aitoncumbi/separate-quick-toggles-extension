@@ -9,6 +9,10 @@ A GNOME Shell extension that replaces the default combined Quick Settings panel 
 - **Customizable Order**: Drag and drop to reorder panel indicators
 - **Show/Hide Toggles**: Enable or disable individual indicators as needed
 - **Compact Mode**: Option to use iOS-style compact mode with a single ☰ icon
+- **App Dock**: Shows your GNOME favorite apps as launchers in the top bar
+- **Dock Position**: Place the app dock on the left, center, or right side of the top bar
+- **Clock Position**: Move the clock/date menu to the left, center, or right side
+- **Hide Activities Button**: Optionally remove the Activities button from the top bar
 - **Battery Percentage**: Optional display of battery percentage next to the icon
 - **Single Quick Settings Icon**: The default GNOME Quick Settings button is replaced with a single compact gear icon
 
@@ -82,6 +86,7 @@ The default GNOME Quick Settings button in the top-right corner is now replaced 
 - `lib/utils.js` - Shared process/DBus/menu helper functions
 - `lib/volume-slider.js` - Reusable custom volume slider widget
 - `ui/compact-indicator.js` - Compact mode indicator/menu
+- `ui/app-dock.js` - Top-bar launcher dock for favorite apps
 - `ui/wifi-indicator.js` - Wi-Fi standalone indicator
 - `ui/bluetooth-indicator.js` - Bluetooth standalone indicator
 - `ui/sound-indicator.js` - Sound standalone indicator
