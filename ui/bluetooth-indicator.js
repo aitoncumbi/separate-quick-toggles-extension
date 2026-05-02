@@ -10,7 +10,7 @@ import * as PanelMenu from "resource:///org/gnome/shell/ui/panelMenu.js";
 import * as PopupMenu from "resource:///org/gnome/shell/ui/popupMenu.js";
 import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.js";
 
-import { makeProxy, openControlCenter, spawnSync } from "../lib/utils.js";
+import { makeProxy, openControlCenter, spawnAsync, spawnSync } from "../lib/utils.js";
 
 const BluetoothIndicator = GObject.registerClass(
   class BluetoothIndicator extends PanelMenu.Button {
@@ -111,6 +111,18 @@ const BluetoothIndicator = GObject.registerClass(
       );
       const btLabel = headerBox.get_last_child();
       if (btLabel) btLabel.set_style("font-weight: bold; font-size: 1.05em;");
+
+      this._btSwitch = new St.Button({
+        style_class: "toggle-switch",
+        toggle_mode: true,
+        checked: false,
+      });
+      this._btSwitch.set_style("margin-right: 8px;");
+      this._btSwitch.connect("clicked", () => {
+        this._setBt(this._btSwitch.checked);
+      });
+      headerBox.add_child(this._btSwitch);
+
       const refreshBtn = new St.Button({
         style_class: "icon-button",
         child: new St.Icon({
@@ -129,14 +141,6 @@ const BluetoothIndicator = GObject.registerClass(
       this.menu.addMenuItem(headerRow);
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      this._toggleItem = new PopupMenu.PopupSwitchMenuItem(
-        _("Bluetooth"),
-        true
-      );
-      this._toggleItem.connect("toggled", (_i, s) => this._setBt(s));
-      this.menu.addMenuItem(this._toggleItem);
-
-      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
       this._devSection = new PopupMenu.PopupMenuSection();
       this.menu.addMenuItem(this._devSection);
 
@@ -152,7 +156,7 @@ const BluetoothIndicator = GObject.registerClass(
 
     _refresh() {
       const on = this._proxy?.get_cached_property("Powered")?.unpack() ?? false;
-      this._toggleItem.setToggleState(on);
+      this._btSwitch.checked = on;
       this._listDevices();
     }
 
@@ -179,10 +183,11 @@ const BluetoothIndicator = GObject.registerClass(
       let count = 0;
       if (out) {
         for (const line of out.trim().split("\n")) {
-          const m = line.match(/^Device\s+[\w:]+\s+(.+)$/);
+          const m = line.match(/^Device\s+([\w:]+)\s+(.+)$/);
           if (!m) continue;
-          const name = m[1].trim();
-          if (!name) continue;
+          const mac = m[1].trim();
+          const name = m[2].trim();
+          if (!name || !mac) continue;
           const item = new PopupMenu.PopupBaseMenuItem();
           item.add_child(
             new St.Icon({
@@ -196,6 +201,9 @@ const BluetoothIndicator = GObject.registerClass(
               y_align: Clutter.ActorAlign.CENTER,
               x_expand: true,
             })
+          );
+          item.connect("activate", () =>
+            spawnAsync(["bluetoothctl", "connect", mac])
           );
           this._devSection.addMenuItem(item);
           count++;

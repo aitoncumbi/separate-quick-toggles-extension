@@ -1,20 +1,39 @@
 # Separate Quick Toggles
 
-A GNOME Shell extension that replaces the default combined Quick Settings panel with individual, customizable status indicators on the panel.
+A GNOME Shell extension that replaces the default combined Quick Settings panel with individual, customizable status indicators on the top bar.
+
+## Screenshots
+
+### Wi-Fi — hover pocket showing SSID and live throughput
+![Wi-Fi indicator](images/wifi.png)
+
+### Bluetooth — hover pocket showing connected device and battery
+![Bluetooth indicator](images/bt.png)
+
+### Sound — hover pocket showing current media track
+![Sound indicator](images/sound.png)
+
+### Sound — hover pocket with animated music visualizer while playing
+![Sound indicator playing](images/sound_playing.png)
+
+### Battery — hover pocket showing charge level and status
+![Battery indicator](images/battery.png)
+
+---
 
 ## Features
 
-- **Separate Indicators**: Replaces the default wifi/sound/battery button with individual icons for Wi-Fi, Bluetooth, Sound, and Battery
-- **Dynamic WiFi Icon**: Wi-Fi indicator shows real-time signal strength (offline, disconnected, weak, ok, good, excellent)
-- **Customizable Order**: Drag and drop to reorder panel indicators
-- **Show/Hide Toggles**: Enable or disable individual indicators as needed
-- **Compact Mode**: Option to use iOS-style compact mode with a single ☰ icon
-- **App Dock**: Shows your GNOME favorite apps as launchers in the top bar
-- **Dock Position**: Place the app dock on the left, center, or right side of the top bar
-- **Clock Position**: Move the clock/date menu to the left, center, or right side
-- **Hide Activities Button**: Optionally remove the Activities button from the top bar
-- **Battery Percentage**: Optional display of battery percentage next to the icon
-- **Single Quick Settings Icon**: The default GNOME Quick Settings button is replaced with a single compact gear icon
+- **Separate Indicators** — Replaces the default Wi-Fi/sound/battery button with individual icons for Wi-Fi, Bluetooth, Sound, Battery, and Notifications
+- **Hover Pockets** — Hovering any indicator shows a floating tooltip with live status (SSID + speed, device name, track info, battery %, etc.)
+- **Dynamic Wi-Fi Icon** — Reflects real-time signal strength: offline, disconnected, weak, ok, good, excellent
+- **Music Visualizer** — Animated bars on the Sound pocket while media is playing
+- **Customizable Order** — Drag and drop to reorder panel indicators in preferences
+- **Show/Hide Toggles** — Enable or disable individual indicators as needed
+- **Compact Mode** — Single ☰ icon combining all indicators into one menu
+- **Clock Position** — Move the clock/date display to the left, center, or right of the top bar
+- **Hide Activities Button** — Optionally remove the Activities button from the top bar
+- **Battery Percentage** — Optional percentage label next to the battery icon
+- **Single Quick Settings Icon** — The default GNOME Quick Settings button is replaced with a compact gear icon
 
 ## Installation
 
@@ -34,86 +53,87 @@ A GNOME Shell extension that replaces the default combined Quick Settings panel 
    ```
 
 4. Restart GNOME Shell or log out and back in:
-   - Press `Alt`+`F2`, type `r`, and press Enter (on X11)
-   - Or log out and back in (on Wayland)
+   - Press `Alt`+`F2`, type `r`, and press Enter (X11 only)
+   - Or log out and back in (Wayland)
 
 ## Configuration
 
-Open GNOME Settings and navigate to **Extensions** → **Separate Quick Toggles** to configure:
+Open GNOME Settings → **Extensions** → **Separate Quick Toggles** to configure:
 
-- **Panel Indicators**: Reorder and toggle visibility of individual status indicators
-- **Compact Mode**: Enable iOS-style compact mode (single icon for all indicators)
-- **Battery**: Show or hide battery percentage label
+- **Panel Indicators** — Reorder and toggle visibility of individual indicators
+- **Compact Mode** — Enable single-icon compact mode
+- **Battery** — Show or hide the percentage label
 
 ## Indicators
 
 ### Wi-Fi
-- Shows connection status
 - Dynamic icon reflects current signal strength
-- Click to open Wi-Fi menu with available networks
-- Refresh button to scan for networks
+- Hover to see SSID and live download/upload speed
+- Click to open the Wi-Fi menu with a toggle switch, available networks list, and a refresh button
+- Async network scanning — no UI freezes
 
 ### Bluetooth
 - Shows Bluetooth on/off status
-- Lists paired devices
-- Toggle Bluetooth on/off
+- Hover to see the connected device name and battery level
+- Click to open the Bluetooth menu with a toggle switch and paired devices list
+- Click a device to connect to it
 
 ### Sound
-- Volume slider for audio control
-- Mute/unmute toggle
-- Visual volume indicator
+- Hover to see current volume or the playing track (artist · title)
+- Animated visualizer bars in the hover pocket while media is playing
+- Click to open the Sound menu with a volume slider, per-device mute circle button (blue = active, grey = muted), and output device picker
 
 ### Battery
 - Displays current battery percentage and charging status
-- Optional percentage label on panel
-- Time remaining estimate (charging or discharging)
+- Hover to see charge percentage and state (charging, discharging, full)
+- Optional percentage label on the panel
+- Click to open the Battery menu with time-remaining estimate
 
 ### Notifications
-- Shows notification indicator
-- Lists recent notifications
-
-## Quick Settings Customization
-
-The default GNOME Quick Settings button in the top-right corner is now replaced with a single compact gear icon (emblem-system-symbolic) that:
-- Maintains the same functionality
-- Takes up minimal panel space
-- Matches the size of the individual indicators
+- Badge shows the number of pending notifications
+- Click to open the GNOME notification panel (the same one in the clock dropdown)
 
 ## Files
 
-- `extension.js` - Extension lifecycle and panel wiring
-- `prefs.js` - Preferences/settings UI
-- `lib/utils.js` - Shared process/DBus/menu helper functions
-- `lib/volume-slider.js` - Reusable custom volume slider widget
-- `ui/compact-indicator.js` - Compact mode indicator/menu
-- `ui/app-dock.js` - Top-bar launcher dock for favorite apps
-- `ui/wifi-indicator.js` - Wi-Fi standalone indicator
-- `ui/bluetooth-indicator.js` - Bluetooth standalone indicator
-- `ui/sound-indicator.js` - Sound standalone indicator
-- `ui/battery-indicator.js` - Battery standalone indicator
-- `ui/notification-indicator.js` - Notification standalone indicator
-- `ui/indicators.js` - Indicator factory for runtime creation
-- `stylesheet.css` - Visual styling
-- `metadata.json` - Extension metadata
-- `schemas/org.gnome.shell.extensions.separate-quick-toggles.gschema.xml` - GSettings schema
+- `extension.js` — Extension lifecycle and panel wiring
+- `prefs.js` — Preferences/settings UI
+- `lib/utils.js` — Shared process/D-Bus/menu helper functions
+- `lib/volume-slider.js` — Reusable custom volume slider widget
+- `ui/compact-indicator.js` — Compact mode indicator/menu
+- `ui/wifi-indicator.js` — Wi-Fi standalone indicator
+- `ui/bluetooth-indicator.js` — Bluetooth standalone indicator
+- `ui/sound-indicator.js` — Sound standalone indicator
+- `ui/battery-indicator.js` — Battery standalone indicator
+- `ui/notification-indicator.js` — Notification standalone indicator
+- `ui/indicators.js` — Indicator factory for runtime creation
+- `ui/pocket.js` — Floating hover pocket widget
+- `stylesheet.css` — Visual styling
+- `metadata.json` — Extension metadata
+- `schemas/org.gnome.shell.extensions.separate-quick-toggles.gschema.xml` — GSettings schema
+
+## Troubleshooting
+
+**Indicators don't appear after installation:**
+1. Compile the schema: `glib-compile-schemas ~/.local/share/gnome-shell/extensions/separate-quick-toggles@extension/schemas/`
+2. Restart GNOME Shell (`Alt`+`F2` → `r` → Enter, X11 only) or log out/in
+3. Check the extension is enabled in GNOME Settings
+
+**Wi-Fi icon isn't updating:**
+- Ensure NetworkManager is installed and running
+- The icon updates based on the active access point signal strength via D-Bus
+
+**Bluetooth devices not connecting:**
+- Ensure `bluetoothctl` is available (`bluez` package)
+- Devices must be paired before they appear in the list
+
+## Requirements
+
+- GNOME Shell 45 or later
+- NetworkManager (Wi-Fi indicator)
+- BlueZ / `bluetoothctl` (Bluetooth indicator)
+- PulseAudio / PipeWire + `pactl` (Sound indicator)
+- Compatible with both X11 and Wayland
 
 ## License
 
 This extension is provided as-is for personal use.
-
-## Troubleshooting
-
-If indicators don't appear after installation:
-1. Make sure the schema is compiled: `glib-compile-schemas ~/.local/share/gnome-shell/extensions/separate-quick-toggles@extension/schemas/`
-2. Restart GNOME Shell (`Alt`+`F2`, `r`, `Enter`)
-3. Check if the extension is enabled in GNOME Settings
-
-If the WiFi icon isn't updating:
-- Make sure NetworkManager is installed and running
-- The dynamic icon updates based on the active access point signal strength
-
-## Notes
-
-- Requires GNOME Shell 40 or later
-- Compatible with both X11 and Wayland
-- The extension automatically restores the default Quick Settings appearance when disabled

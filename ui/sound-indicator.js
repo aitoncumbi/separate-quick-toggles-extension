@@ -307,19 +307,54 @@ const SoundIndicator = GObject.registerClass(
     }
 
     _buildMenu() {
-      const header = new PopupMenu.PopupMenuItem(_("Sound"), {
-        reactive: false,
+      // ── Header: title + mute circle button ──────────────────────────────
+      const headerRow = new PopupMenu.PopupBaseMenuItem({ reactive: false });
+      headerRow.set_style("padding: 4px 12px;");
+      const headerBox = new St.BoxLayout({ x_expand: true });
+      headerBox.add_child(
+        new St.Label({
+          text: _("Sound"),
+          y_align: Clutter.ActorAlign.CENTER,
+          x_expand: true,
+          style: "font-weight: bold; font-size: 1.05em;",
+        })
+      );
+
+      this._muteBtn = new St.Button({
+        child: new St.Icon({
+          icon_name: "audio-volume-high-symbolic",
+          icon_size: 16,
+        }),
+        style: [
+          "border-radius: 16px;",
+          "width: 32px;",
+          "height: 32px;",
+          "padding: 0;",
+          "background-color: #3584e4;",
+        ].join(" "),
       });
-      header.label.style = "font-weight: bold; font-size: 1.05em;";
-      this.menu.addMenuItem(header);
+      this._muteBtn.connect("clicked", () => {
+        this._muted = !this._muted;
+        spawnAsync([
+          "pactl",
+          "set-sink-mute",
+          "@DEFAULT_SINK@",
+          this._muted ? "1" : "0",
+        ]);
+        if (!this._muted && this._volume === 0) {
+          this._volume = 0.5;
+          spawnAsync(["pactl", "set-sink-volume", "@DEFAULT_SINK@", "50%"]);
+        }
+        if (this._slider) this._slider.value = this._muted ? 0 : this._volume;
+        this._updateMuteBtn();
+        this._updatePanelIcon();
+      });
+      headerBox.add_child(this._muteBtn);
+      headerRow.add_child(headerBox);
+      this.menu.addMenuItem(headerRow);
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      const outLabel = new PopupMenu.PopupMenuItem(_("Output Volume"), {
-        reactive: false,
-      });
-      outLabel.label.style = "opacity: 0.7; font-size: 0.9em;";
-      this.menu.addMenuItem(outLabel);
-
+      // ── Volume slider ────────────────────────────────────────────────────
       this._slider = new VolumeSliderItem();
       this._slider.value = this._volume;
       this._slider.connect("value-changed", (_i, v) => {
@@ -338,41 +373,106 @@ const SoundIndicator = GObject.registerClass(
           v === 0 ? "1" : "0",
         ]);
         this._updatePanelIcon();
-        if (this._muteItem) this._muteItem.setToggleState(this._muted);
+        this._updateMuteBtn();
       });
       this.menu.addMenuItem(this._slider);
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      this._muteItem = new PopupMenu.PopupSwitchMenuItem(
-        _("Mute"),
-        this._muted
-      );
-      this._muteItem.connect("toggled", (_i, state) => {
-        this._muted = state;
-        spawnAsync([
-          "pactl",
-          "set-sink-mute",
-          "@DEFAULT_SINK@",
-          state ? "1" : "0",
-        ]);
-        this._updatePanelIcon();
-        this._slider.value = state ? 0 : this._volume;
-      });
-      this.menu.addMenuItem(this._muteItem);
-      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+      // ── Audio device list ────────────────────────────────────────────────
+      this._sinkSection = new PopupMenu.PopupMenuSection();
+      this.menu.addMenuItem(this._sinkSection);
 
+      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
       const s = new PopupMenu.PopupMenuItem(_("Sound Settings…"));
       s.connect("activate", () => openControlCenter("sound"));
       this.menu.addMenuItem(s);
 
       this.menu.connect("open-state-changed", (_m, open) => {
-        if (open) this._readState();
+        if (open) {
+          this._readState();
+          this._listSinks();
+        }
       });
+    }
+
+    _updateMuteBtn() {
+      if (!this._muteBtn) return;
+      const icon = this._muteBtn.get_child();
+      if (this._muted) {
+        if (icon) icon.icon_name = "audio-volume-muted-symbolic";
+        this._muteBtn.set_style(
+          "border-radius: 16px; width: 32px; height: 32px; padding: 0; background-color: rgba(255,255,255,0.15);"
+        );
+      } else {
+        if (icon)
+          icon.icon_name =
+            this._volume < 0.35
+              ? "audio-volume-low-symbolic"
+              : this._volume < 0.7
+              ? "audio-volume-medium-symbolic"
+              : "audio-volume-high-symbolic";
+        this._muteBtn.set_style(
+          "border-radius: 16px; width: 32px; height: 32px; padding: 0; background-color: #3584e4;"
+        );
+      }
+    }
+
+    _listSinks() {
+      if (!this._sinkSection) return;
+      this._sinkSection.removeAll();
+
+      const defaultSink = spawnSync(["pactl", "get-default-sink"])?.trim() ?? "";
+      const sinksOut = spawnSync(["pactl", "list", "sinks"]) ?? "";
+
+      const sinks = [];
+      let curName = "";
+      for (const raw of sinksOut.split("\n")) {
+        const namem = raw.match(/^\s+Name:\s+(.+)$/);
+        if (namem) { curName = namem[1].trim(); continue; }
+        const descm = raw.match(/^\s+Description:\s+(.+)$/);
+        if (descm && curName) {
+          sinks.push({ name: curName, desc: descm[1].trim() });
+          curName = "";
+        }
+      }
+
+      if (sinks.length <= 1) return;
+
+      for (const { name, desc } of sinks) {
+        const isActive = name === defaultSink;
+        const item = new PopupMenu.PopupBaseMenuItem();
+        item.add_child(
+          new St.Icon({
+            icon_name: "audio-card-symbolic",
+            style_class: "popup-menu-icon",
+          })
+        );
+        item.add_child(
+          new St.Label({
+            text: desc,
+            y_align: Clutter.ActorAlign.CENTER,
+            x_expand: true,
+            style: isActive ? "font-weight: bold;" : "",
+          })
+        );
+        if (isActive)
+          item.add_child(
+            new St.Icon({
+              icon_name: "object-select-symbolic",
+              style_class: "popup-menu-icon",
+            })
+          );
+        item.connect("activate", () => {
+          spawnAsync(["pactl", "set-default-sink", name]);
+          this._listSinks();
+        });
+        this._sinkSection.addMenuItem(item);
+      }
     }
 
     _syncUI() {
       if (this._slider) this._slider.value = this._muted ? 0 : this._volume;
-      if (this._muteItem) this._muteItem.setToggleState(this._muted);
+      this._updateMuteBtn();
       this._updatePanelIcon();
     }
 

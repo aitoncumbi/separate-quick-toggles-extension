@@ -83,12 +83,13 @@ const CompactIndicator = GObject.registerClass(
       const wifiLabel = wifiHeaderBox.get_last_child();
       if (wifiLabel)
         wifiLabel.set_style("font-weight: bold; font-size: 1.05em; flex: 1;");
-      this._wifiSwitch = new St.Button({ style_class: "toggle-switch" });
-      this._wifiSwitchState = false;
+      this._wifiSwitch = new St.Button({
+        style_class: "toggle-switch",
+        toggle_mode: true,
+        checked: false,
+      });
       this._wifiSwitch.connect("clicked", () => {
-        this._wifiSwitchState = !this._wifiSwitchState;
-        this._wifiSwitch.checked = this._wifiSwitchState;
-        this._setWifi(this._wifiSwitchState);
+        this._setWifi(this._wifiSwitch.checked);
       });
       wifiHeaderBox.add_child(this._wifiSwitch);
       wifiHeader.add_child(wifiHeaderBox);
@@ -127,12 +128,13 @@ const CompactIndicator = GObject.registerClass(
       const btLabel = btHeaderBox.get_last_child();
       if (btLabel)
         btLabel.set_style("font-weight: bold; font-size: 1.05em; flex: 1;");
-      this._btSwitch = new St.Button({ style_class: "toggle-switch" });
-      this._btSwitchState = false;
+      this._btSwitch = new St.Button({
+        style_class: "toggle-switch",
+        toggle_mode: true,
+        checked: false,
+      });
       this._btSwitch.connect("clicked", () => {
-        this._btSwitchState = !this._btSwitchState;
-        this._btSwitch.checked = this._btSwitchState;
-        this._setBt(this._btSwitchState);
+        this._setBt(this._btSwitch.checked);
       });
       btHeaderBox.add_child(this._btSwitch);
       btHeader.add_child(btHeaderBox);
@@ -278,13 +280,11 @@ const CompactIndicator = GObject.registerClass(
       const wifiOn =
         this._nmProxy?.get_cached_property("WirelessEnabled")?.unpack() ??
         false;
-      this._wifiSwitchState = wifiOn;
       this._wifiSwitch.checked = wifiOn;
       this._scanWifi();
 
       const btOn =
         this._btProxy?.get_cached_property("Powered")?.unpack() ?? false;
-      this._btSwitchState = btOn;
       this._btSwitch.checked = btOn;
       this._listBt();
 
@@ -400,10 +400,11 @@ const CompactIndicator = GObject.registerClass(
       let count = 0;
       if (out) {
         for (const line of out.trim().split("\n")) {
-          const m = line.match(/^Device\s+[\w:]+\s+(.+)$/);
+          const m = line.match(/^Device\s+([\w:]+)\s+(.+)$/);
           if (!m) continue;
-          const name = m[1].trim();
-          if (!name) continue;
+          const mac = m[1].trim();
+          const name = m[2].trim();
+          if (!name || !mac) continue;
           const item = new PopupMenu.PopupBaseMenuItem();
           item.add_child(
             new St.Icon({
@@ -413,6 +414,9 @@ const CompactIndicator = GObject.registerClass(
           );
           item.add_child(
             new St.Label({ text: name, y_align: Clutter.ActorAlign.CENTER })
+          );
+          item.connect("activate", () =>
+            spawnAsync(["bluetoothctl", "connect", mac])
           );
           this._btSection.addMenuItem(item);
           count++;

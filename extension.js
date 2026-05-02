@@ -4,7 +4,6 @@ import St from "gi://St";
 
 import * as Main from "resource:///org/gnome/shell/ui/main.js";
 import { Extension } from "resource:///org/gnome/shell/extensions/extension.js";
-import AppDock from "./ui/app-dock.js";
 import CompactIndicator from "./ui/compact-indicator.js";
 import { createIndicator } from "./ui/indicators.js";
 import Pocket from "./ui/pocket.js";
@@ -18,7 +17,6 @@ export default class SeparateQuickToggles extends Extension {
     this._connections = [];
     this._sqtPatched = false;
     this._pocket = new Pocket(this._settings);
-    this._appDock = new AppDock(this._settings, this._pocket);
 
     this._syncPanelLayout();
 
@@ -57,8 +55,6 @@ export default class SeparateQuickToggles extends Extension {
   disable() {
     this._restorePanelLayout();
     this._destroy();
-    this._appDock?.destroy();
-    this._appDock = null;
     this._pocket?.destroy();
     this._pocket = null;
     for (const conn of this._connections) {

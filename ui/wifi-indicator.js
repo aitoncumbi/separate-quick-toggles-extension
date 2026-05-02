@@ -13,8 +13,6 @@ import { gettext as _ } from "resource:///org/gnome/shell/extensions/extension.j
 import {
   makeProxy,
   openControlCenter,
-  spawnAsync,
-  spawnSync,
   wifiSignalIcon,
 } from "../lib/utils.js";
 
@@ -95,9 +93,6 @@ const WifiIndicator = GObject.registerClass(
           iconName: "network-wireless-disconnected-symbolic",
         };
 
-      // Deterministic fallback: populate SSID/interface once when cache is empty.
-      if (!this._currentSsid) this._hydrateActiveFromNmcliSync();
-
       if (!this._currentSsid) this._refreshFromActiveAccessPoint();
 
       const ssid = this._currentSsid || _("Connected");
@@ -109,24 +104,6 @@ const WifiIndicator = GObject.registerClass(
             ? wifiSignalIcon(this._currentStrength, true)
             : this._icon.icon_name || "network-wireless-connected-symbolic",
       };
-    }
-
-    _hydrateActiveFromNmcliSync() {
-      const out = spawnSync([
-        "nmcli",
-        "-t",
-        "-f",
-        "DEVICE,TYPE,CONNECTION",
-        "device",
-        "status",
-      ]);
-      const active = this._parseActiveWifiInterface(out);
-      if (!active) return;
-
-      this._activeIface = active.iface ?? this._activeIface;
-      if (active.connection && active.connection !== "--") {
-        this._currentSsid = active.connection;
-      }
     }
 
     _showPocket() {
@@ -558,13 +535,10 @@ const WifiIndicator = GObject.registerClass(
 
     _runCommandAsync(argv, done) {
       try {
-        const command = argv.map((part) => GLib.shell_quote(part)).join(" ");
-        const proc = new Gio.Subprocess({
-          argv: ["/bin/sh", "-lc", command],
-          flags:
-            Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE,
-        });
-
+        const proc = Gio.Subprocess.new(
+          argv,
+          Gio.SubprocessFlags.STDOUT_PIPE | Gio.SubprocessFlags.STDERR_PIPE
+        );
         proc.communicate_utf8_async(null, null, (_p, res) => {
           try {
             const [, stdout] = proc.communicate_utf8_finish(res);
@@ -624,6 +598,18 @@ const WifiIndicator = GObject.registerClass(
       const wifiLabel = headerBox.get_last_child();
       if (wifiLabel)
         wifiLabel.set_style("font-weight: bold; font-size: 1.05em;");
+
+      this._wifiSwitch = new St.Button({
+        style_class: "toggle-switch",
+        toggle_mode: true,
+        checked: false,
+      });
+      this._wifiSwitch.set_style("margin-right: 8px;");
+      this._wifiSwitch.connect("clicked", () => {
+        this._setWifi(this._wifiSwitch.checked);
+      });
+      headerBox.add_child(this._wifiSwitch);
+
       const refreshBtn = new St.Button({
         style_class: "icon-button",
         child: new St.Icon({
@@ -643,11 +629,6 @@ const WifiIndicator = GObject.registerClass(
       this.menu.addMenuItem(headerRow);
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      this._toggleItem = new PopupMenu.PopupSwitchMenuItem(_("Wi-Fi"), false);
-      this._toggleItem.connect("toggled", (_i, s) => this._setWifi(s));
-      this.menu.addMenuItem(this._toggleItem);
-
-      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
       this._netSection = new PopupMenu.PopupMenuSection();
       this.menu.addMenuItem(this._netSection);
 
@@ -664,7 +645,7 @@ const WifiIndicator = GObject.registerClass(
     _refresh() {
       const wifiOn =
         this._proxy?.get_cached_property("WirelessEnabled")?.unpack() ?? false;
-      this._toggleItem.setToggleState(wifiOn);
+      this._wifiSwitch.checked = wifiOn;
       this._scanNetworks();
     }
 
@@ -704,18 +685,7 @@ const WifiIndicator = GObject.registerClass(
           "list",
         ],
         (asyncOut) => {
-          const out =
-            asyncOut ||
-            spawnSync([
-              "nmcli",
-              "-t",
-              "-f",
-              "SSID,SIGNAL,SECURITY,IN-USE",
-              "dev",
-              "wifi",
-              "list",
-            ]) ||
-            "";
+          const out = asyncOut || "";
 
           this._netSection.removeAll();
 
